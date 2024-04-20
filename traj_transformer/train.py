@@ -95,7 +95,7 @@ def process_loss(loss: list, epoch: int, prefix: str = ''):
     stats[prefix + 'std'] = torch.std(loss).item()
     stats[prefix + 'max'] = torch.max(loss).item()
     stats[prefix + 'min'] = torch.min(loss).item()
-    stats[prefix + 'epoch'] = epoch
+    stats['epoch'] = epoch
 
     return stats
 
@@ -104,7 +104,7 @@ def train(device='cuda', epochs=10):
     get_wandb_logger(project_name='Traj_transformer',
                      entity_name='x-huang',
                      group='TrajTransformer',
-                     name='1120', local_log_dir='')
+                     name='mac', local_log_dir='')
 
     mlp_in = 256
     mlp_out = dim_policy_out()
@@ -132,6 +132,7 @@ def train(device='cuda', epochs=10):
     # Train the model - FixMe: Record the loss using WandB
     for epoch in range(epochs):
         train_loss = []
+        diffs = []
         model.train()
         for data in train_loader:
             data = data.to(device).float()
@@ -144,10 +145,18 @@ def train(device='cuda', epochs=10):
             loss.backward()
             optimizer.step()
             train_loss.append(loss.item())
-        stat = process_loss(train_loss, epoch, prefix='train_loss_')
+            diff = position - data
+            # Find out the max l2 difference in sequence
+            diff = torch.norm(diff, p=2, dim=2)
+            diff_max = torch.max(diff)
+            diffs.append(diff_max)
+        stat = process_loss(train_loss, prefix='train_loss_')
+        stat_diff = process_loss(diffs, prefix='train_max_diff_')
+        stat.update(stat_diff)
         wandb.log(stat)
         # Test
         test_loss = []
+        diffs = []
         model.eval()
         for data in test_loader:
             data = data.to(device).float()
@@ -157,8 +166,15 @@ def train(device='cuda', epochs=10):
             zeros = torch.zeros_like(position, device=device)
             loss = torch.nn.functional.mse_loss(position - data, zeros)
             test_loss.append(loss.item())
+            diff = position - data
+            # Find out the max l2 difference in sequence
+            diff = torch.norm(diff, p=2, dim=2)
+            diff_max = torch.max(diff)
+            diffs.append(diff_max)
         # Log the loss and the epoch
         stat = process_loss(test_loss, epoch, prefix='test_loss_')
+        stat_diff = process_loss(diffs, epoch, prefix='test_max_diff_')
+        stat.update(stat_diff)
         wandb.log(stat)
 
 
