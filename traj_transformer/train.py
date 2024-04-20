@@ -161,7 +161,7 @@ def train(device='cuda'):
 
 
 if __name__ == '__main__':
-    train("cpu")
+    train("cuda")
 
 
 
