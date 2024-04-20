@@ -166,7 +166,7 @@ class TrajReconstructor(nn.Module):
         self.mlp_output_dim = mlp_out
         self.dropout = dropout
 
-        self.n_mlp_layers = 3
+        self.n_mlp_layers = 1
         self.n_mlp_hidden = 256
 
         encoder = Encoder(
