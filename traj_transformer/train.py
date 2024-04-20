@@ -132,6 +132,7 @@ def train(device='cuda', epochs=10):
     # Train the model - FixMe: Record the loss using WandB
     for epoch in range(epochs):
         train_loss = []
+        model.train()
         for data in train_loader:
             data = data.to(device).float()
             optimizer.zero_grad()
@@ -147,6 +148,7 @@ def train(device='cuda', epochs=10):
         wandb.log(stat)
         # Test
         test_loss = []
+        model.eval()
         for data in test_loader:
             data = data.to(device).float()
             param = model(data)
