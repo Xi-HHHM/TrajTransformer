@@ -100,11 +100,11 @@ def process_loss(loss: list, epoch: int, prefix: str = ''):
     return stats
 
 
-def train(device='cuda'):
+def train(device='cuda', epochs=10):
     get_wandb_logger(project_name='Traj_transformer',
                      entity_name='x-huang',
                      group='TrajTransformer',
-                     name='TrajTransformer', local_log_dir='wandb')
+                     name='mac', local_log_dir='')
 
     mlp_in = 256
     mlp_out = dim_policy_out()
@@ -130,7 +130,7 @@ def train(device='cuda'):
     model.train()
 
     # Train the model - FixMe: Record the loss using WandB
-    for epoch in range(10):
+    for epoch in range(epochs):
         train_loss = []
         for data in train_loader:
             data = data.to(device).float()
@@ -161,7 +161,7 @@ def train(device='cuda'):
 
 
 if __name__ == '__main__':
-    train("cuda")
+    train(device='cuda', epochs=200)
 
 
 
