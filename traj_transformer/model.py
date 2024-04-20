@@ -185,9 +185,10 @@ class TrajReconstructor(nn.Module):
             emb_dropout=dropout)
 
         self.fc = nn.Sequential()
-        for i in range(self.n_mlp_layers - 1):
-            self.fc.add_module(f"fc{i}", nn.Linear(self.n_mlp_hidden, self.n_mlp_hidden))
-            self.fc.add_module(f"relu{i}", nn.ReLU())
+        if self.n_mlp_layers > 1:
+            for i in range(self.n_mlp_layers - 1):
+                self.fc.add_module(f"fc{i}", nn.Linear(self.n_mlp_hidden, self.n_mlp_hidden))
+                self.fc.add_module(f"relu{i}", nn.ReLU())
 
         self.fc.add_module("fc_last", nn.Linear(self.n_mlp_hidden, self.mlp_output_dim))
 
