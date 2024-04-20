@@ -150,8 +150,8 @@ def train(device='cuda', epochs=10):
             diff = torch.norm(diff, p=2, dim=2)
             diff_max = torch.max(diff)
             diffs.append(diff_max)
-        stat = process_loss(train_loss, prefix='train_loss_')
-        stat_diff = process_loss(diffs, prefix='train_max_diff_')
+        stat = process_loss(train_loss, epoch, prefix='train_loss_')
+        stat_diff = process_loss(diffs, epoch, prefix='train_max_diff_')
         stat.update(stat_diff)
         wandb.log(stat)
         # Test
