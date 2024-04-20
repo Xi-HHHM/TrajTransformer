@@ -87,8 +87,8 @@ def dim_policy_out():
 
 
 def process_loss(loss: list, epoch: int, prefix: str = ''):
-    if isinstance(loss, list):
-        raise ValueError("Loss should be a list")
+    if not isinstance(loss, list):
+        raise ValueError(f"Loss should be a list, got {type(loss)}")
     stats = {}
     loss = torch.tensor(loss)
     stats[prefix + 'mean'] = torch.mean(loss).item()
@@ -161,7 +161,7 @@ def train(device='cuda'):
 
 
 if __name__ == '__main__':
-    train("cuda")
+    train("cpu")
 
 
 
