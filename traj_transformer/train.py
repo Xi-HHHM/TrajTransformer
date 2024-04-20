@@ -104,7 +104,7 @@ def train(device='cuda', epochs=10):
     get_wandb_logger(project_name='Traj_transformer',
                      entity_name='x-huang',
                      group='TrajTransformer',
-                     name='mac', local_log_dir='')
+                     name='1120', local_log_dir='')
 
     mlp_in = 256
     mlp_out = dim_policy_out()
@@ -143,20 +143,20 @@ def train(device='cuda', epochs=10):
             loss.backward()
             optimizer.step()
             train_loss.append(loss.item())
-        stat = process_loss(train_loss, epoch, prefix='train_')
+        stat = process_loss(train_loss, epoch, prefix='train_loss_')
         wandb.log(stat)
         # Test
         test_loss = []
         for data in test_loader:
-            data = data.to('cuda').float()
+            data = data.to(device).float()
             param = model(data)
             result = mp4.get_prodmp_results(param)
             position = result["pos"]
-            zeros = torch.zeros_like(position, device='cuda')
+            zeros = torch.zeros_like(position, device=device)
             loss = torch.nn.functional.mse_loss(position + data, zeros)
             test_loss.append(loss.item())
         # Log the loss and the epoch
-        stat = process_loss(test_loss, epoch, prefix='test_')
+        stat = process_loss(test_loss, epoch, prefix='test_loss_')
         wandb.log(stat)
 
 
