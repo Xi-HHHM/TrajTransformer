@@ -1,8 +1,8 @@
 wandb:
-  project: traj-transformer
-  entity: 'trajectron-plus-plus'
-  group: 'traj-transformer'
-  name: '1108'
+  project: Traj_transformer
+  entity: 'x-huang'
+  group: 'TrajTransformer'
+  name: '1108-adamW'
 
 train:
   batch_size: 256
