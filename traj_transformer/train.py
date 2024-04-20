@@ -104,7 +104,7 @@ def train(device='cuda', epochs=10):
     get_wandb_logger(project_name='Traj_transformer',
                      entity_name='x-huang',
                      group='TrajTransformer',
-                     name='1108', local_log_dir='')
+                     name='1108-wd', local_log_dir='')
 
     mlp_in = 256
     mlp_out = dim_policy_out()
