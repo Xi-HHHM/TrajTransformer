@@ -81,11 +81,11 @@ class MP4Transformer:
 
         return traj_gen
 
-    def get_prodmp_results(self, params):
+    def get_prodmp_results(self, params, data):
         batch_size = params.shape[0]
         self.traj_gen.set_params(params)
 
-        condition_pos = torch.zeros([batch_size, 6], device=params.device)
+        condition_pos = data[:, 0, :]
         condition_vel = torch.zeros([batch_size, 6], device=params.device)
         init_time = torch.zeros([batch_size], device=params.device)
 

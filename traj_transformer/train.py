@@ -137,10 +137,10 @@ def train(device='cuda', epochs=10):
             data = data.to(device).float()
             optimizer.zero_grad()
             param = model(data)
-            result = mp4.get_prodmp_results(param)
+            result = mp4.get_prodmp_results(param, data)
             position = result["pos"]
             zeros = torch.zeros_like(position, device=device)
-            loss = torch.nn.functional.mse_loss(position + data, zeros)
+            loss = torch.nn.functional.mse_loss(position - data, zeros)
             loss.backward()
             optimizer.step()
             train_loss.append(loss.item())
@@ -152,10 +152,10 @@ def train(device='cuda', epochs=10):
         for data in test_loader:
             data = data.to(device).float()
             param = model(data)
-            result = mp4.get_prodmp_results(param)
+            result = mp4.get_prodmp_results(param, data)
             position = result["pos"]
             zeros = torch.zeros_like(position, device=device)
-            loss = torch.nn.functional.mse_loss(position + data, zeros)
+            loss = torch.nn.functional.mse_loss(position - data, zeros)
             test_loss.append(loss.item())
         # Log the loss and the epoch
         stat = process_loss(test_loss, epoch, prefix='test_loss_')
