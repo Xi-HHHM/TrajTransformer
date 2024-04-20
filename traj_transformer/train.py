@@ -104,7 +104,7 @@ def train(device='cuda', epochs=10):
     get_wandb_logger(project_name='Traj_transformer',
                      entity_name='x-huang',
                      group='TrajTransformer',
-                     name='1108-wd', local_log_dir='')
+                     name='1108-wd-256', local_log_dir='')
 
     mlp_in = 256
     mlp_out = dim_policy_out()
@@ -121,8 +121,8 @@ def train(device='cuda', epochs=10):
     train_dataset = CustomDataset(train_data)
     test_dataset = CustomDataset(test_data)
 
-    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=64, shuffle=True)
+    train_loader = DataLoader(train_dataset, batch_size=256, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=256, shuffle=True)
 
     # ToDevice
     model.to(device)
