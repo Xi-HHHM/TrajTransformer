@@ -1,0 +1,29 @@
+wandb:
+  project: traj-transformer
+  entity: 'trajectron-plus-plus'
+  group: 'traj-transformer'
+  name: '1108'
+
+train:
+  batch_size: 256
+  num_epochs: 100
+  warmup_epochs: 0
+  lr: 0.0001
+  lr_scheduler:
+    step_size: 10
+    gamma: 0.1
+  lr_decay: 0.1
+  weight_decay: 0.0
+  device: 'cuda'
+
+model:
+  mp:
+    mlp:
+      in_dim: 256
+      hidden_dim: 256
+      n_layer: 1
+  transformer:
+    n_layer: 4
+    n_head: 8
+    emb_dim: 256
+    dropout: 0.1

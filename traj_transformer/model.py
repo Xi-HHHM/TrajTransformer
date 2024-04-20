@@ -26,7 +26,7 @@ class XTrajTransformerWrapper(nn.Module):
             self.register_tokens = nn.Parameter(torch.randn(num_register_tokens, dim))
 
         self.patch_to_embedding = nn.Sequential(
-            LayerNorm(traj_dim),
+            # LayerNorm(traj_dim),
             nn.Linear(traj_dim, dim, bias=False),
             LayerNorm(dim)
         )
@@ -160,19 +160,23 @@ class XObstacleTransformerWrapper(nn.Module):
 
 
 class TrajReconstructor(nn.Module):
-    def __init__(self, mlp_in, mlp_out, dropout=0.1):
+    def __init__(self, mlp_in, mlp_out, mlp_n_hidden, mlp_n_layers,
+                 transformer_emb_dim=256,
+                 transformer_depth=4,
+                 transformer_heads=4,
+                 dropout=0.1):
         super(TrajReconstructor, self).__init__()
         self.mlp_input_dim = mlp_in
         self.mlp_output_dim = mlp_out
         self.dropout = dropout
 
-        self.n_mlp_layers = 1
-        self.n_mlp_hidden = 256
+        self.n_mlp_layers = mlp_n_layers
+        self.n_mlp_hidden = mlp_n_hidden
 
         encoder = Encoder(
-            dim=256,
-            depth=4,
-            heads=4,
+            dim=transformer_emb_dim,
+            depth=transformer_depth,
+            heads=transformer_heads,
             layer_dropout=dropout, )
 
         self.encoder = XTrajTransformerWrapper(

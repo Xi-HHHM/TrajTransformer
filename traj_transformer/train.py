@@ -2,12 +2,26 @@ import torch
 import os
 
 import wandb
+import argparse
+import yaml
 
 from model import TrajReconstructor
 from utils.util_mp import MP4Transformer
 from utils.util_data import load_traj_from_hdf5
 from utils.util_wandb import get_wandb_logger
 from torch.utils.data import DataLoader, Dataset
+
+
+class WarmupInverseSqrtSchedule(torch.optim.lr_scheduler._LRScheduler):
+    def __init__(self, optimizer, warmup_steps, model_size, last_epoch=-1):
+        self.warmup_steps = warmup_steps
+        self.model_size = model_size
+        super().__init__(optimizer, last_epoch)
+
+    def get_lr(self):
+        step = max(1, self.last_epoch)
+        scale = (self.model_size ** -0.5) * min(step ** -0.5, step * self.warmup_steps ** -1.5)
+        return [base_lr * scale for base_lr in self.base_lrs]
 
 
 class CustomDataset(Dataset):
@@ -100,29 +114,62 @@ def process_loss(loss: list, epoch: int, prefix: str = ''):
     return stats
 
 
-def train(device='cuda', epochs=10):
-    get_wandb_logger(project_name='Traj_transformer',
-                     entity_name='x-huang',
-                     group='TrajTransformer',
-                     name='1108-wd-256', local_log_dir='')
+def train(config: dict):
+    wandb_config = config['wandb']
+    project_name = wandb_config['project']
+    entity_name = wandb_config['entity']
+    group = wandb_config['group']
+    name = wandb_config['name']
 
-    mlp_in = 256
+    train_config = config['train']
+    device = train_config['device']
+    epochs = train_config['epochs']
+    warmup_epochs = train_config['warmup_epochs']
+
+    # Hyperparameters
+    lr = train_config['lr']
+    wd = train_config['wd']
+    lr_scheduler = train_config['lr_scheduler']
+    batch_size = train_config['batch_size']
+
+    # MPs
+    model_config = config['model']
+    mlp_in = model_config['mp']['mlp']['in_dim']
+    mlp_n_layers = model_config['mp']['mlp']['n_layer']
+    mlp_n_hidden = model_config['mp']['mlp']['hidden_dim']
     mlp_out = dim_policy_out()
 
+    # Transformer
+    transformer_emb_dim = model_config['transformer']['emb_dim']
+    transformer_n_layers = model_config['transformer']['n_layer']
+    transformer_n_heads = model_config['transformer']['n_head']
+    transformer_dropout = model_config['transformer']['dropout']
+
+    get_wandb_logger(project_name=project_name,
+                     entity_name=entity_name,
+                     group=group, name=name, local_log_dir='')
+
     # Initialize the model
-    model = TrajReconstructor(mlp_in=mlp_in, mlp_out=mlp_out, dropout=0.1)
+    model = TrajReconstructor(mlp_in=mlp_in, mlp_out=mlp_out,
+                              mlp_n_hidden=mlp_n_hidden,
+                              mlp_n_layers=mlp_n_layers,
+                              transformer_emb_dim=transformer_emb_dim,
+                              transformer_depth=transformer_n_layers,
+                              transformer_heads=transformer_n_heads,
+                              dropout=transformer_dropout)
     # Initialize the MP4Transformer
     mp4 = MP4Transformer()
     # Initialize the optimizer
-    optimizer = torch.optim.AdamW(model.parameters(), lr=0.0005, weight_decay=5e-5)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=wd)
+    scheduler = WarmupInverseSqrtSchedule(optimizer, warmup_steps=4000, model_size=transformer_emb_dim)
 
     # Prepare the dataset
     train_data, test_data = load_data()
     train_dataset = CustomDataset(train_data)
     test_dataset = CustomDataset(test_data)
 
-    train_loader = DataLoader(train_dataset, batch_size=256, shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=256, shuffle=True)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
     # ToDevice
     model.to(device)
@@ -178,10 +225,19 @@ def train(device='cuda', epochs=10):
         stat_diff = process_loss(diffs, epoch, prefix='test_max_diff_')
         stat.update(stat_diff)
         wandb.log(stat)
+        wandb.log({'lr': scheduler.get_lr()[0]})
+        scheduler.step()
 
 
 if __name__ == '__main__':
-    train(device='cuda', epochs=200)
+    # Parse the arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--cfg', type=str, help='Path to the config file')
+    args = parser.parse_args()
+    cfg_file = args.cfg
+    cfg = yaml.load(open(cfg_file, 'r'), Loader=yaml.FullLoader)
+
+    train(cfg)
 
 
 
