@@ -114,7 +114,7 @@ def train(device='cuda', epochs=10):
     # Initialize the MP4Transformer
     mp4 = MP4Transformer()
     # Initialize the optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=0.0005, weight_decay=5e-5)
 
     # Prepare the dataset
     train_data, test_data = load_data()
