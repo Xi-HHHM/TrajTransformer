@@ -17,7 +17,7 @@ class CustomDataset(Dataset):
 
             # Reverse the numpy arrays in data
             # TODO: we need to check this
-            data_dict_2 = {i + len(data): d[::-1, :] for i, d in enumerate(data)}
+            data_dict_2 = {i + len(data): d[::-1, :].copy() for i, d in enumerate(data)}
 
             # Concatenate the two dictionaries
             data_dict.update(data_dict_2)
