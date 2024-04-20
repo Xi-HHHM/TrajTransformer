@@ -147,9 +147,10 @@ def train(device='cuda', epochs=10):
             train_loss.append(loss.item())
             diff = position - data
             # Find out the max l2 difference in sequence
+            diff.detach()
             diff = torch.norm(diff, p=2, dim=2)
             diff_max = torch.max(diff)
-            diffs.append(diff_max)
+            diffs.append(diff_max.item())
         stat = process_loss(train_loss, epoch, prefix='train_loss_')
         stat_diff = process_loss(diffs, epoch, prefix='train_max_diff_')
         stat.update(stat_diff)
@@ -167,10 +168,11 @@ def train(device='cuda', epochs=10):
             loss = torch.nn.functional.mse_loss(position - data, zeros)
             test_loss.append(loss.item())
             diff = position - data
+            diff.detach()
             # Find out the max l2 difference in sequence
             diff = torch.norm(diff, p=2, dim=2)
             diff_max = torch.max(diff)
-            diffs.append(diff_max)
+            diffs.append(diff_max.item())
         # Log the loss and the epoch
         stat = process_loss(test_loss, epoch, prefix='test_loss_')
         stat_diff = process_loss(diffs, epoch, prefix='test_max_diff_')
