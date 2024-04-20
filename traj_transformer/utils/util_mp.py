@@ -90,7 +90,7 @@ class MP4Transformer:
         init_time = torch.zeros([batch_size], device=params.device)
 
         self.traj_gen.set_initial_conditions(init_time, condition_pos, condition_vel)
-        self.traj_gen.set_duration(self.duration, self.dt)
+        self.traj_gen.set_duration(self.duration, self.dt, include_init_time=True)
 
         result_dict = self.traj_gen.get_trajs()
         return result_dict
@@ -179,4 +179,4 @@ if __name__ == "__main__":
     mp4 = MP4Transformer()
     params = torch.randn([64, 24], device="cpu")
     result = mp4.get_prodmp_results(params)
-    print(result)
+    print(result['pos'].size())
