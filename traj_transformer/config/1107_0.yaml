@@ -2,19 +2,19 @@ wandb:
   project: Traj_transformer
   entity: 'x-huang'
   group: 'TrajTransformer'
-  name: '1107-register-tokens-4'
+  name: '1107-1-512-reg-4'
 
 train:
-  batch_size: 256
+  batch_size: 512
   epochs: 100
-  warmup_epochs: 0
+  warmup_epochs: 40
   lr: 0.001
   lr_scheduler:
     step_size: 10
     gamma: 0.1
   lr_decay: 0.1
   wd: 0.00001
-  device: 'cuda:1'
+  device: 'cuda:0'
 
 model:
   mp:
