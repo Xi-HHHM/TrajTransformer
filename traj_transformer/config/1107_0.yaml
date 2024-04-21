@@ -8,6 +8,7 @@ train:
   batch_size: 512
   epochs: 100
   n_checkpoints: 1
+  warmup_epochs: 40
   lr: 0.0001
   lr_scheduler:
     type: 'stepLR'
