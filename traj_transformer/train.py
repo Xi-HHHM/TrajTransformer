@@ -9,7 +9,7 @@ from tqdm import tqdm
 from model import TrajReconstructor
 from utils.util_mp import MP4Transformer
 from utils.util_data import load_traj_from_hdf5
-from utils.util_wandb import get_wandb_logger
+from utils.util_wandb import get_wandb_logger, plot_reconstruction, log_artifact
 from torch.utils.data import DataLoader, Dataset
 
 
@@ -126,11 +126,15 @@ def train(config: dict):
     device = train_config['device']
     epochs = train_config['epochs']
     warmup_epochs = train_config['warmup_epochs']
+    n_checkpoints = train_config['n_checkpoints']
+    lr_scheduler = train_config['lr_scheduler']
+    lr_step_size = lr_scheduler['step_size']
+    lr_gamma = lr_scheduler['gamma']
+    save_interval = int(epochs / n_checkpoints)
 
     # Hyperparameters
     lr = train_config['lr']
     wd = train_config['wd']
-    lr_scheduler = train_config['lr_scheduler']
     batch_size = train_config['batch_size']
 
     # MPs
@@ -151,7 +155,7 @@ def train(config: dict):
 
     get_wandb_logger(project_name=project_name,
                      entity_name=entity_name,
-                     group=group, name=name, local_log_dir='')
+                     group=group, name=name, local_log_dir='', config=config)
 
     # Initialize the model
     model = TrajReconstructor(mlp_in=mlp_in, mlp_out=mlp_out,
@@ -166,7 +170,8 @@ def train(config: dict):
     mp4 = MP4Transformer(device=device)
     # Initialize the optimizer
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=wd)
-    scheduler = WarmupInverseSqrtSchedule(optimizer, warmup_steps=warmup_epochs, model_size=transformer_emb_dim)
+    # scheduler = WarmupInverseSqrtSchedule(optimizer, warmup_steps=warmup_epochs, model_size=transformer_emb_dim)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=lr_step_size, gamma=lr_gamma)
 
     # Prepare the dataset
     train_data, test_data = load_data()
@@ -204,6 +209,7 @@ def train(config: dict):
             diff = torch.norm(diff, p=2, dim=2)
             diff_max = torch.max(diff)
             diffs.append(diff_max.item())
+
         stat = process_loss(train_loss, epoch, prefix='train_loss_')
         stat_diff = process_loss(diffs, epoch, prefix='train_max_diff_')
         stat.update(stat_diff)
@@ -223,9 +229,11 @@ def train(config: dict):
             diff = position - data
             diff.detach()
             # Find out the max l2 difference in sequence
-            diff = torch.norm(diff, p=2, dim=2)
+            diff = torch.norm(diff, p=2, dim=2)  # B x T
             diff_max = torch.max(diff)
+            diff_max_index = torch.argmax(diff)
             diffs.append(diff_max.item())
+
         # Log the loss and the epoch
         stat = process_loss(test_loss, epoch, prefix='test_loss_')
         stat_diff = process_loss(diffs, epoch, prefix='test_max_diff_')
@@ -234,6 +242,17 @@ def train(config: dict):
         wandb.log({'lr': scheduler.get_lr()[0]})
         scheduler.step()
         progress_bar.update(1)
+
+        if epoch % save_interval == 0:
+            torch.save(model.encoder.state_dict(),
+                       os.path.join(wandb.run.dir, f"TrajReconstructorEncoder_{epoch}.pt"))
+            torch.save(model.fc.state_dict(),
+                       os.path.join(wandb.run.dir, f"TrajReconstructorFC_{epoch}.pt"))
+
+            traj_index = diff_max_index // 51
+            plot_reconstruction(data[traj_index], position[traj_index])
+            wandb.save(os.path.join(wandb.run.dir, "*.pt"))
+            log_artifact()
 
 
 if __name__ == '__main__':
