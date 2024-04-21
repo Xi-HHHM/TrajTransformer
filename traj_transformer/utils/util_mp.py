@@ -93,9 +93,11 @@ class MP4Transformer:
             self.traj_gen.set_initial_conditions(init_time, condition_pos, condition_vel)
             self.traj_gen.set_duration(self.duration, self.dt, include_init_time=True)
         except Exception as e:
-            print(self.traj_gen.basis_gn.pre_compute_length_factor)
-            print(init_time)
-            print(init_time.max())
+            print("self.traj_gen.basis_gn.pre_compute_length_factor", self.traj_gen.basis_gn.pre_compute_length_factor)
+            print("init_time.max()", init_time.max())
+            print("init_time.max() > self.traj_gen.basis_gn.pre_compute_length_factor",
+                  init_time.max() > self.traj_gen.basis_gn.pre_compute_length_factor)
+            raise e
 
         result_dict = self.traj_gen.get_trajs()
         return result_dict
