@@ -164,6 +164,7 @@ class TrajReconstructor(nn.Module):
                  transformer_emb_dim=256,
                  transformer_depth=4,
                  transformer_heads=4,
+                 transformer_register_tokens=0,
                  dropout=0.1):
         super(TrajReconstructor, self).__init__()
         self.mlp_input_dim = mlp_in
@@ -185,7 +186,7 @@ class TrajReconstructor(nn.Module):
             attn_layers=encoder,
             num_classes=None,
             post_emb_norm=False,
-            num_register_tokens=0,
+            num_register_tokens=transformer_register_tokens,
             emb_dropout=dropout)
 
         self.fc = nn.Sequential()

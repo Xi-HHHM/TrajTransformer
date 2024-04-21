@@ -4,6 +4,7 @@ import os
 import wandb
 import argparse
 import yaml
+from tqdm import tqdm
 
 from model import TrajReconstructor
 from utils.util_mp import MP4Transformer
@@ -144,9 +145,9 @@ def train(config: dict):
     transformer_n_layers = model_config['transformer']['n_layer']
     transformer_n_heads = model_config['transformer']['n_head']
     transformer_dropout = model_config['transformer']['dropout']
-
-    from tqdm import tqdm
-    progress_bar = tqdm(total=epochs, desc='Training')
+    transformer_register_tokens = model_config['transformer']['register_tokens']
+    if transformer_register_tokens is False:
+        transformer_register_tokens = 0
 
     get_wandb_logger(project_name=project_name,
                      entity_name=entity_name,
@@ -159,6 +160,7 @@ def train(config: dict):
                               transformer_emb_dim=transformer_emb_dim,
                               transformer_depth=transformer_n_layers,
                               transformer_heads=transformer_n_heads,
+                              transformer_register_tokens=transformer_register_tokens,
                               dropout=transformer_dropout)
     # Initialize the MP4Transformer
     mp4 = MP4Transformer()
@@ -178,6 +180,7 @@ def train(config: dict):
     model.to(device)
     model.float()
     model.train()
+    progress_bar = tqdm(total=epochs, desc='Training')
 
     # Train the model - FixMe: Record the loss using WandB
     for epoch in range(epochs):
@@ -229,7 +232,7 @@ def train(config: dict):
         stat.update(stat_diff)
         wandb.log(stat)
         wandb.log({'lr': scheduler.get_lr()[0]})
-        scheduler.step(epoch)
+        scheduler.step()
         progress_bar.update(1)
 
 
