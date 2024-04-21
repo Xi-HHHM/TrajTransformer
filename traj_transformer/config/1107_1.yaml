@@ -2,12 +2,12 @@ wandb:
   project: Traj_transformer
   entity: 'x-huang'
   group: 'TrajTransformer'
-  name: '1107-1-512-reg-4'
+  name: '1107-1-256-reg-4'
 
 train:
-  batch_size: 512
+  batch_size: 256
   epochs: 100
-  warmup_epochs: 100
+  warmup_epochs: 40
   lr: 0.001
   lr_scheduler:
     step_size: 10

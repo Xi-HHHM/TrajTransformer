@@ -27,3 +27,4 @@ model:
     n_head: 8
     emb_dim: 256
     dropout: 0.1
+    register_tokens: False
