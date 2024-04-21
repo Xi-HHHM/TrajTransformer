@@ -163,7 +163,7 @@ def train(config: dict):
                               transformer_register_tokens=transformer_register_tokens,
                               dropout=transformer_dropout)
     # Initialize the MP4Transformer
-    mp4 = MP4Transformer()
+    mp4 = MP4Transformer(device=device)
     # Initialize the optimizer
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=wd)
     scheduler = WarmupInverseSqrtSchedule(optimizer, warmup_steps=warmup_epochs, model_size=transformer_emb_dim)

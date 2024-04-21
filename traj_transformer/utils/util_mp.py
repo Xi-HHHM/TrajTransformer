@@ -10,10 +10,10 @@ from fancy_gym.black_box.factory.trajectory_generator_factory import get_traject
 
 
 class MP4Transformer:
-    def __init__(self):
+    def __init__(self, device="cpu"):
         self.duration = 5
         self.dt = 0.1
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = device
 
         self.traj_gen = self.get_traj_gen()
 
