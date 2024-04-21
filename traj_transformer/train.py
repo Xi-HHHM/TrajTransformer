@@ -31,10 +31,10 @@ class CustomDataset(Dataset):
 
             # Reverse the numpy arrays in data
             # TODO: we need to check this
-            data_dict_2 = {i + len(data): d[::-1, :].copy() for i, d in enumerate(data)}
+            # data_dict_2 = {i + len(data): d[::-1, :].copy() for i, d in enumerate(data)}
 
             # Concatenate the two dictionaries
-            data_dict.update(data_dict_2)
+            # data_dict.update(data_dict_2)
 
             self.data = data_dict
         else:
@@ -145,6 +145,9 @@ def train(config: dict):
     transformer_n_heads = model_config['transformer']['n_head']
     transformer_dropout = model_config['transformer']['dropout']
 
+    from tqdm import tqdm
+    progress_bar = tqdm(total=epochs, desc='Training')
+
     get_wandb_logger(project_name=project_name,
                      entity_name=entity_name,
                      group=group, name=name, local_log_dir='')
@@ -227,6 +230,7 @@ def train(config: dict):
         wandb.log(stat)
         wandb.log({'lr': scheduler.get_lr()[0]})
         scheduler.step()
+        progress_bar.update(1)
 
 
 if __name__ == '__main__':
