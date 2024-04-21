@@ -164,7 +164,7 @@ def train(config: dict):
     mp4 = MP4Transformer()
     # Initialize the optimizer
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=wd)
-    scheduler = WarmupInverseSqrtSchedule(optimizer, warmup_steps=4000, model_size=transformer_emb_dim)
+    scheduler = WarmupInverseSqrtSchedule(optimizer, warmup_steps=20, model_size=transformer_emb_dim)
 
     # Prepare the dataset
     train_data, test_data = load_data()
@@ -229,7 +229,7 @@ def train(config: dict):
         stat.update(stat_diff)
         wandb.log(stat)
         wandb.log({'lr': scheduler.get_lr()[0]})
-        scheduler.step()
+        scheduler.step(epoch)
         progress_bar.update(1)
 
 
