@@ -15,7 +15,7 @@ def log_artifact():
     wandb.log_artifact(artifact)
 
 
-def plot_reconstruction(data, recon):
+def plot_reconstruction(data, recon, epoch):
     """
     Plot the reference and actual robot trajectories
     """
@@ -41,5 +41,5 @@ def plot_reconstruction(data, recon):
         axs[i].set_title(f"Joint {i}")
 
     # Save to wandb folder
-    plt.savefig(os.path.join(wandb.run.dir, "reconstruction.png"))
+    plt.savefig(os.path.join(wandb.run.dir, f"reconstruction_{epoch}.png"))
 

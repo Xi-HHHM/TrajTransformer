@@ -250,7 +250,7 @@ def train(config: dict):
                        os.path.join(wandb.run.dir, f"TrajReconstructorFC_{epoch}.pt"))
 
             traj_index = diff_max_index // 51
-            plot_reconstruction(data[traj_index], position[traj_index])
+            plot_reconstruction(data[traj_index], position[traj_index], epoch)
             wandb.save(os.path.join(wandb.run.dir, "*.pt"))
             log_artifact()
 
