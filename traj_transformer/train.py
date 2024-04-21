@@ -130,7 +130,6 @@ def train(config: dict):
     # Hyperparameters
     lr = train_config['lr']
     wd = train_config['wd']
-    lr_scheduler = train_config['lr_scheduler']
     batch_size = train_config['batch_size']
 
     # MPs
@@ -166,7 +165,7 @@ def train(config: dict):
     mp4 = MP4Transformer()
     # Initialize the optimizer
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=wd)
-    scheduler = WarmupInverseSqrtSchedule(optimizer, warmup_steps=20, model_size=transformer_emb_dim)
+    scheduler = WarmupInverseSqrtSchedule(optimizer, warmup_steps=warmup_epochs, model_size=transformer_emb_dim)
 
     # Prepare the dataset
     train_data, test_data = load_data()

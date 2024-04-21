@@ -7,7 +7,7 @@ wandb:
 train:
   batch_size: 256
   epochs: 100
-  warmup_epochs: 0
+  warmup_epochs: 100
   lr: 0.001
   lr_scheduler:
     step_size: 10
