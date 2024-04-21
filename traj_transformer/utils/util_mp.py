@@ -96,6 +96,8 @@ class MP4Transformer:
             init_time = init_time[..., None]
             print("self.traj_gen.basis_gn.pre_compute_length_factor", self.traj_gen.basis_gn.pre_compute_length_factor)
             scaled_time = self.traj_gen.basis_gn.phase_generator.left_bound_linear_phase(init_time)
+            print("scaled_time", scaled_time)
+            print("scaled_time", scaled_time.max())
             print("init_time.max() > self.traj_gen.basis_gn.pre_compute_length_factor",
                   scaled_time.max() > self.traj_gen.basis_gn.pre_compute_length_factor)
             raise e
