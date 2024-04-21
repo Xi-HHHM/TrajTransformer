@@ -89,8 +89,13 @@ class MP4Transformer:
         condition_vel = torch.zeros([batch_size, 6], device=params.device)
         init_time = torch.zeros([batch_size], device=params.device)
 
-        self.traj_gen.set_initial_conditions(init_time, condition_pos, condition_vel)
-        self.traj_gen.set_duration(self.duration, self.dt, include_init_time=True)
+        try:
+            self.traj_gen.set_initial_conditions(init_time, condition_pos, condition_vel)
+            self.traj_gen.set_duration(self.duration, self.dt, include_init_time=True)
+        except Exception as e:
+            print(self.traj_gen.basis_gn.pre_compute_length_factor)
+            print(init_time)
+            print(init_time.max())
 
         result_dict = self.traj_gen.get_trajs()
         return result_dict
