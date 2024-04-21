@@ -14,7 +14,7 @@ train:
     gamma: 0.1
   lr_decay: 0.1
   wd: 0.00001
-  device: 'cuda:0'
+  device: 'cuda:1'
 
 model:
   mp:
