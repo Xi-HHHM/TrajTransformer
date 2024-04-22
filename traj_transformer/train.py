@@ -243,7 +243,7 @@ def train(config: dict):
         scheduler.step()
         progress_bar.update(1)
 
-        if epoch % save_interval == 0:
+        if (epoch + 1) % save_interval == 0:
             torch.save(model.encoder.state_dict(),
                        os.path.join(wandb.run.dir, f"TrajReconstructorEncoder_{epoch}.pt"))
             torch.save(model.fc.state_dict(),
