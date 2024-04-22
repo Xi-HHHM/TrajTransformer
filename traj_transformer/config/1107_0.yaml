@@ -2,7 +2,7 @@ wandb:
   project: Traj_transformer
   entity: 'x-huang'
   group: 'TrajTransformer'
-  name: '1107-1-512-reg-4-wd1e-5'
+  name: '1107-0-512-reg-4-wd1e-5'
 
 train:
   batch_size: 512
