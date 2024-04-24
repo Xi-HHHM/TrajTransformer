@@ -44,8 +44,8 @@ class MP4Transformer:
             }
         }
 
-        kwargs_dict_ur_prodmp['trajectory_generator_kwargs']['weights_scale'] = 0.7
-        kwargs_dict_ur_prodmp['trajectory_generator_kwargs']['goal_scale'] = 0.5
+        kwargs_dict_ur_prodmp['trajectory_generator_kwargs']['weights_scale'] = 0.6
+        kwargs_dict_ur_prodmp['trajectory_generator_kwargs']['goal_scale'] = 0.4
         kwargs_dict_ur_prodmp['trajectory_generator_kwargs']['auto_scale_basis'] = True
         kwargs_dict_ur_prodmp['trajectory_generator_kwargs']['relative_goal'] = False
         kwargs_dict_ur_prodmp['trajectory_generator_kwargs']['disable_goal'] = False
