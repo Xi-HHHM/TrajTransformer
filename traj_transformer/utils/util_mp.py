@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 from addict import Dict
 
@@ -44,16 +45,18 @@ class MP4Transformer:
             }
         }
 
-        kwargs_dict_ur_prodmp['trajectory_generator_kwargs']['weights_scale'] = 0.6
-        kwargs_dict_ur_prodmp['trajectory_generator_kwargs']['goal_scale'] = 0.4
+        kwargs_dict_ur_prodmp['controller_kwargs']['controller_type'] = 'position'
+        kwargs_dict_ur_prodmp['trajectory_generator_kwargs']['weights_scale'] = 0.4
+        kwargs_dict_ur_prodmp['trajectory_generator_kwargs']['goal_scale'] = 1.0
         kwargs_dict_ur_prodmp['trajectory_generator_kwargs']['auto_scale_basis'] = True
         kwargs_dict_ur_prodmp['trajectory_generator_kwargs']['relative_goal'] = False
         kwargs_dict_ur_prodmp['trajectory_generator_kwargs']['disable_goal'] = False
-        kwargs_dict_ur_prodmp['basis_generator_kwargs']['num_basis'] = 3
-        kwargs_dict_ur_prodmp['phase_generator_kwargs']['tau'] = 5
+        kwargs_dict_ur_prodmp['basis_generator_kwargs']['num_basis'] = self.n_basis
+        kwargs_dict_ur_prodmp['phase_generator_kwargs']['tau'] = 4
         kwargs_dict_ur_prodmp['phase_generator_kwargs']['learn_tau'] = False
         kwargs_dict_ur_prodmp['phase_generator_kwargs']['learn_delay'] = False
         kwargs_dict_ur_prodmp['basis_generator_kwargs']['alpha'] = 25.
+        kwargs_dict_ur_prodmp['basis_generator_kwargs']['dt'] = 0.1
         kwargs_dict_ur_prodmp['basis_generator_kwargs']['basis_bandwidth_factor'] = 1
         kwargs_dict_ur_prodmp['phase_generator_kwargs']['alpha_phase'] = 3
 
@@ -77,17 +80,18 @@ class MP4Transformer:
         phase_gen = get_phase_generator(**phase_kwargs)
         basis_gen = get_basis_generator(phase_generator=phase_gen, **basis_kwargs)
         traj_gen = get_trajectory_generator(basis_generator=basis_gen, **traj_gen_kwargs)
-        traj_gen.set_duration(self.duration, self.dt)
+        traj_gen.set_duration(self.duration, self.dt, include_init_time=True)
 
         return traj_gen
 
-    def get_prodmp_results(self, params, data):
-        batch_size = params.shape[0]
+    def get_prodmp_results(self, params, init_pos, init_vel):
+        batch_size = params.shape[0] if params.ndim == 2 else 1
         self.traj_gen.set_params(params)
 
-        condition_pos = data[:, 0, :]
-        condition_vel = torch.zeros([batch_size, 6], device=params.device)
-        init_time = torch.zeros([batch_size], device=params.device)
+        condition_pos = init_pos
+        condition_vel = init_vel
+        device = params.device if isinstance(params, torch.Tensor) else self.device
+        init_time = torch.zeros([batch_size], device=device) if params.ndim == 2 else self.traj_gen.times[0]
 
         try:
             self.traj_gen.set_initial_conditions(init_time, condition_pos, condition_vel)
@@ -104,6 +108,37 @@ class MP4Transformer:
 
         result_dict = self.traj_gen.get_trajs()
         return result_dict
+
+    def get_prodmp_results_2(self, params, condition_pos, condition_vel):
+        batch_size = params.shape[0]
+        self.traj_gen.set_params(params)
+
+        # Fix me later
+        init_time = self.traj_gen.times[0]
+
+        try:
+            self.traj_gen.set_initial_conditions(init_time, condition_pos, condition_vel)
+            self.traj_gen.set_duration(self.duration, self.dt, include_init_time=True)
+        except Exception as e:
+            init_time = init_time[..., None]
+            print("self.traj_gen.basis_gn.pre_compute_length_factor", self.traj_gen.basis_gn.pre_compute_length_factor)
+            scaled_time = self.traj_gen.basis_gn.phase_generator.left_bound_linear_phase(init_time)
+            print("scaled_time", scaled_time)
+            print("scaled_time", scaled_time.max())
+            print("init_time.max() > self.traj_gen.basis_gn.pre_compute_length_factor",
+                  scaled_time.max() > self.traj_gen.basis_gn.pre_compute_length_factor)
+            raise e
+
+        result_dict = self.traj_gen.get_trajs()
+        return result_dict
+
+    def get_mp_weights(self, data, reg):
+        if data.shape[:-1] != self.traj_gen.times.shape:
+            times = np.repeat(self.traj_gen.times[None, ...], data.shape[0], axis=0)
+        else:
+            times = self.traj_gen.times
+        param = self.traj_gen.learn_mp_params_from_trajs(times, data, reg=reg)
+        return param
 
 
 class MP4TransformerDeprecated:

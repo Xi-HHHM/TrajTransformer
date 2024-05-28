@@ -18,6 +18,7 @@ train:
   device: 'cuda:0'
 
 model:
+  input_type: 'joint'
   mp:
     mlp:
       in_dim: 256

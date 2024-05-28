@@ -160,15 +160,15 @@ class XObstacleTransformerWrapper(nn.Module):
 
 
 class TrajReconstructor(nn.Module):
-    def __init__(self, mlp_in, mlp_out, mlp_n_hidden, mlp_n_layers,
+    def __init__(self, pre_mlp_in, post_mlp_out, mlp_n_hidden, mlp_n_layers,
                  transformer_emb_dim=256,
                  transformer_depth=4,
                  transformer_heads=4,
                  transformer_register_tokens=0,
                  dropout=0.1):
         super(TrajReconstructor, self).__init__()
-        self.mlp_input_dim = mlp_in
-        self.mlp_output_dim = mlp_out
+        self.pre_mlp_input_dim = pre_mlp_in
+        self.post_mlp_output_dim = post_mlp_out
         self.dropout = dropout
 
         self.n_mlp_layers = mlp_n_layers
@@ -182,7 +182,7 @@ class TrajReconstructor(nn.Module):
 
         self.encoder = XTrajTransformerWrapper(
             traj_length=51,
-            traj_dim=6,
+            traj_dim=self.pre_mlp_input_dim,
             attn_layers=encoder,
             num_classes=None,
             post_emb_norm=False,
@@ -192,13 +192,12 @@ class TrajReconstructor(nn.Module):
         self.fc = nn.Sequential()
         if self.n_mlp_layers > 1:
             for i in range(self.n_mlp_layers - 1):
-                self.fc.add_module(f"fc{i}", nn.Linear(self.n_mlp_hidden, self.n_mlp_hidden))
+                self.fc.add_module(f"fc{i}", nn.Linear(transformer_emb_dim, self.n_mlp_hidden))
                 self.fc.add_module(f"relu{i}", nn.ReLU())
 
-        self.fc.add_module("fc_last", nn.Linear(self.n_mlp_hidden, self.mlp_output_dim))
+        self.fc.add_module("fc_last", nn.Linear(self.n_mlp_hidden, self.post_mlp_output_dim))
 
     def forward(self, x):
-        x = x.view(-1, 51, 6)
         x = self.encoder(x, return_embeddings=False)
         x = self.fc(x)
         return x

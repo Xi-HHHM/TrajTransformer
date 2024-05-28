@@ -5,12 +5,15 @@ import wandb
 import argparse
 import yaml
 from tqdm import tqdm
+import numpy as np
 
 from model import TrajReconstructor
 from utils.util_mp import MP4Transformer
 from utils.util_data import load_traj_from_hdf5
 from utils.util_wandb import get_wandb_logger, plot_reconstruction, log_artifact
 from torch.utils.data import DataLoader, Dataset
+
+from fancy_gym.envs.mujoco.sb_planning.sbp_wrapper.collision_checker import CollisionChecker
 
 
 class WarmupInverseSqrtSchedule(torch.optim.lr_scheduler._LRScheduler):
@@ -26,9 +29,13 @@ class WarmupInverseSqrtSchedule(torch.optim.lr_scheduler._LRScheduler):
 
 
 class CustomDataset(Dataset):
-    def __init__(self, data):
+    def __init__(self, data, input_type='joint'):
         if isinstance(data, list):
-            data_dict = {i: d for i, d in enumerate(data)}
+            if input_type == 'extend':
+                # Extend the trajectory by filling the other two columns with other values
+                data_dict = {i: self.extend(d) for i, d in enumerate(data)}
+            else:
+                data_dict = {i: d for i, d in enumerate(data)}
 
             # Reverse the numpy arrays in data
             # TODO: we need to check this
@@ -48,6 +55,15 @@ class CustomDataset(Dataset):
     def __getitem__(self, index):
         # Generate one sample of data
         return self.data[index]
+
+    @staticmethod
+    def extend(traj):
+        extended_traj = np.zeros((traj.shape[0], traj.shape[1] * 3))
+        # Extend the trajectory by filling the other two columns with other values
+        extended_traj[:, 0:6] = traj
+        extended_traj[:, 6:12] = np.sin(traj)
+        extended_traj[:, 12:18] = np.cos(traj)
+        return extended_traj
 
 
 def load_data():
@@ -145,6 +161,8 @@ def train(config: dict):
     mlp_out = dim_policy_out()
 
     # Transformer
+    transformer_pre_mlp_input_dim = model_config['transformer']['pre_mlp_input_dim']
+    transformer_linear_input_type = model_config['transformer']['input_type']
     transformer_emb_dim = model_config['transformer']['emb_dim']
     transformer_n_layers = model_config['transformer']['n_layer']
     transformer_n_heads = model_config['transformer']['n_head']
@@ -158,7 +176,8 @@ def train(config: dict):
                      group=group, name=name, local_log_dir='', config=config)
 
     # Initialize the model
-    model = TrajReconstructor(mlp_in=mlp_in, mlp_out=mlp_out,
+    model = TrajReconstructor(pre_mlp_in=transformer_pre_mlp_input_dim,
+                              post_mlp_out=mlp_out,
                               mlp_n_hidden=mlp_n_hidden,
                               mlp_n_layers=mlp_n_layers,
                               transformer_emb_dim=transformer_emb_dim,
@@ -170,13 +189,14 @@ def train(config: dict):
     mp4 = MP4Transformer(device=device)
     # Initialize the optimizer
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=wd)
-    # scheduler = WarmupInverseSqrtSchedule(optimizer, warmup_steps=warmup_epochs, model_size=transformer_emb_dim)
+    # scheduler = WarmupInverseSqrtSchedule(optimizer, warmup_steps=warmup_epochs,
+    # model_size=transformer_emb_dim)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=lr_step_size, gamma=lr_gamma)
 
     # Prepare the dataset
     train_data, test_data = load_data()
-    train_dataset = CustomDataset(train_data)
-    test_dataset = CustomDataset(test_data)
+    train_dataset = CustomDataset(train_data, input_type=transformer_linear_input_type)
+    test_dataset = CustomDataset(test_data, input_type=transformer_linear_input_type)
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
@@ -199,11 +219,11 @@ def train(config: dict):
             result = mp4.get_prodmp_results(param, data)
             position = result["pos"]
             zeros = torch.zeros_like(position, device=device)
-            loss = torch.nn.functional.mse_loss(position - data, zeros)
+            loss = torch.nn.functional.mse_loss(position - data[..., :6], zeros)
             loss.backward()
             optimizer.step()
             train_loss.append(loss.item())
-            diff = position - data
+            diff = position - data[..., :6]
             # Find out the max l2 difference in sequence
             diff.detach()
             diff = torch.norm(diff, p=2, dim=2)
@@ -224,9 +244,9 @@ def train(config: dict):
             result = mp4.get_prodmp_results(param, data)
             position = result["pos"]
             zeros = torch.zeros_like(position, device=device)
-            loss = torch.nn.functional.mse_loss(position - data, zeros)
+            loss = torch.nn.functional.mse_loss(position - data[..., :6], zeros)
             test_loss.append(loss.item())
-            diff = position - data
+            diff = position - data[..., :6]
             diff.detach()
             # Find out the max l2 difference in sequence
             diff = torch.norm(diff, p=2, dim=2)  # B x T
@@ -252,7 +272,7 @@ def train(config: dict):
             traj_index = diff_max_index // 51
             plot_reconstruction(data[traj_index], position[traj_index], epoch)
             wandb.save(os.path.join(wandb.run.dir, "*.pt"))
-            log_artifact()
+        log_artifact()
 
 
 if __name__ == '__main__':

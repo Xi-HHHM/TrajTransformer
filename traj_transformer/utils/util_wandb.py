@@ -15,7 +15,13 @@ def log_artifact():
     wandb.log_artifact(artifact)
 
 
-def plot_reconstruction(data, recon, epoch):
+def download_artifact(model_name):
+    artifact = wandb.use_artifact(model_name, type="model")
+    artifact_dir = artifact.download(root=wandb.run.dir)
+    return artifact_dir
+
+
+def plot_reconstruction(data, recon, epoch, show=False):
     """
     Plot the reference and actual robot trajectories
     """
@@ -24,6 +30,8 @@ def plot_reconstruction(data, recon, epoch):
         data = data.detach().cpu().numpy()
     if isinstance(recon, torch.Tensor):
         recon = recon.detach().cpu().numpy()
+        if recon.ndim == 3:
+            recon = recon.squeeze(0)
 
     fig, axs = plt.subplots(6, 1, figsize=(12, 8))
 
@@ -41,5 +49,8 @@ def plot_reconstruction(data, recon, epoch):
         axs[i].set_title(f"Joint {i}")
 
     # Save to wandb folder
-    plt.savefig(os.path.join(wandb.run.dir, f"reconstruction_{epoch}.png"))
+    if show:
+        plt.show()
+    else:
+        plt.savefig(os.path.join(wandb.run.dir, f"reconstruction_{epoch}.png"))
 

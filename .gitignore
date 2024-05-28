@@ -2,3 +2,7 @@
 *.h5
 **__pycache__**
 **wandb/
+.DS_Store
+*/.DS_Store
+traj_transformer/data
+traj_transformer/assets

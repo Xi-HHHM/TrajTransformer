@@ -24,6 +24,9 @@ model:
       hidden_dim: 256
       n_layer: 1
   transformer:
+    input_type: 'extend'
+    pre_mlp_input_dim: 18
+    post_mlp_output_dim: 256
     n_layer: 4
     n_head: 8
     emb_dim: 256
