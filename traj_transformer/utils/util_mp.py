@@ -15,6 +15,7 @@ class MP4Transformer:
         self.duration = 5
         self.dt = 0.1
         self.device = device
+        self.n_basis = 8
 
         self.traj_gen = self.get_traj_gen()
 

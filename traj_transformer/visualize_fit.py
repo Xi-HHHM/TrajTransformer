@@ -9,17 +9,17 @@ import os
 
 def test_reconstruct():
     mp = MP4Transformer()
-    _, test_data = load_data()
+    data = load_data_as_array()
     # traj, params, init_pos, init_vel = load_reconstruct()
-    for i, d in enumerate(test_data):
-        w = mp.get_mp_weights(d)
-        recon_data = mp.get_prodmp_results(w['params'], w['init_pos'], w['init_vel'])
-        # print(params[i] - w['params'].numpy())
-        # print(init_pos[i] - w['init_pos'].numpy())
-        # print(init_vel[i] - w['init_vel'].numpy())
+    index = 211531
+    traj = data[index]
+    w = mp.get_mp_weights(data[index], reg=1e-6)
+    recon_data = mp.get_prodmp_results(w['params'], w['init_pos'], w['init_vel'])
+    # print(params[i] - w['params'].numpy())
+    # print(init_pos[i] - w['init_pos'].numpy())
+    # print(init_vel[i] - w['init_vel'].numpy())
 
-        plot_reconstruction(d, recon_data["pos"], epoch=0, show=True)
-        # plot_reconstruction(d, traj[i], epoch=0, show=True)
+    plot_reconstruction(traj, recon_data["pos"], epoch=0, show=True)
 
 
 def save_reconstruct():
@@ -92,10 +92,10 @@ def load_reconstruct():
     with h5py.File(file_path, 'r') as f:
         n_data = len(f.keys()) // 3
         for i in range(n_data):
-            params = f[f'params'][:]
-            init_pos = f[f'init_pos'][:]
-            init_vel = f[f'init_vel'][:]
-            traj = f[f'traj'][:]
+            params = f[f'params'][:3]
+            init_pos = f[f'init_pos'][:3]
+            init_vel = f[f'init_vel'][:3]
+            traj = f[f'traj'][:3]
 
     print(init_vel.shape)
     print(traj.shape)
@@ -122,4 +122,4 @@ def load_reconstruct():
 
 
 if __name__ == "__main__":
-    load_reconstruct()
+    save_reconstruct_2()
