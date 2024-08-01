@@ -11,15 +11,15 @@ def test_reconstruct():
     mp = MP4Transformer()
     data = load_data_as_array()
     # traj, params, init_pos, init_vel = load_reconstruct()
-    index = 211531
-    traj = data[index]
-    w = mp.get_mp_weights(data[index], reg=1e-6)
-    recon_data = mp.get_prodmp_results(w['params'], w['init_pos'], w['init_vel'])
-    # print(params[i] - w['params'].numpy())
-    # print(init_pos[i] - w['init_pos'].numpy())
-    # print(init_vel[i] - w['init_vel'].numpy())
+    for index in range(50):
+        traj = data[index]
+        w = mp.get_mp_weights(data[index], reg=1e-5)
+        recon_data = mp.get_prodmp_results(w['params'], w['init_pos'], w['init_vel'])
+        # print(params[i] - w['params'].numpy())
+        # print(init_pos[i] - w['init_pos'].numpy())
+        # print(init_vel[i] - w['init_vel'].numpy())
 
-    plot_reconstruction(traj, recon_data["pos"], epoch=0, show=True)
+        plot_reconstruction(traj, recon_data["pos"], epoch=0, show=True)
 
 
 def save_reconstruct():
@@ -38,16 +38,26 @@ def save_reconstruct_2():
     mp = MP4Transformer()
     data = load_data_as_array()
 
-    w = mp.get_mp_weights(data, reg=1e-5)
-    params = w['params']
-    init_pos = w['init_pos']
-    init_vel = w['init_vel']
+    params_list = []
+    init_pos_list = []
+    init_vel_list = []
+    n_data = data.shape[0]
+    n_jobs = 10
+    batch_size = n_data // n_jobs
+    for i in range(n_jobs):
+        w = mp.get_mp_weights(data[i * batch_size:(i + 1) * batch_size], reg=1e-5)
+        params_list.append(w['params'])
+        init_pos_list.append(w['init_pos'])
+        init_vel_list.append(w['init_vel'])
 
-    reconstructed = mp.get_prodmp_results(params, init_pos, init_vel)
-    traj = reconstructed['pos']
+    params = np.concatenate(params_list, axis=0)
+    init_pos = np.concatenate(init_pos_list, axis=0)
+    init_vel = np.concatenate(init_vel_list, axis=0)
+    # reconstructed = mp.get_prodmp_results(params, init_pos, init_vel)
+    # traj = reconstructed['pos']
 
     pkg_path = os.path.dirname(os.path.abspath(__file__))
-    file_path = os.path.join(pkg_path, 'data/reconstructions_weight_conditions_traj.h5')
+    file_path = os.path.join(pkg_path, 'data/301_random_problems_and_parameterized_iter_filtered_rec_30k.h5')
     with h5py.File(file_path, 'w') as f:
         f.create_dataset('params', data=params, shape=params.shape, chunks=True,
                          compression='gzip', compression_opts=9)
@@ -87,7 +97,7 @@ def save_reconstruct_3():
 
 def load_reconstruct():
     pkg_path = os.path.dirname(os.path.abspath(__file__))
-    file_path = os.path.join(pkg_path, 'data/reconstructions_weight_conditions_traj_220k_04W.h5')
+    file_path = os.path.join(pkg_path, 'data/301_random_problems_and_parameterized_iter_filtered_rec_30k.h5')
     start_time = time.time()
     with h5py.File(file_path, 'r') as f:
         n_data = len(f.keys()) // 3
@@ -122,4 +132,4 @@ def load_reconstruct():
 
 
 if __name__ == "__main__":
-    save_reconstruct_2()
+    load_reconstruct()

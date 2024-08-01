@@ -43,7 +43,7 @@ def load_data_as_array(path=None):
         data_path = os.path.join(path, '../data')
 
     # Get all hdf5 files in the data directory
-    files = [f for f in os.listdir(data_path) if f.endswith('.h5') and "random_problems" in f]
+    files = [f for f in os.listdir(data_path) if f.endswith('.h5') and "30k" in f]
     data = []
     file = files[0]
     with h5py.File(os.path.join(data_path, file), 'r') as f:

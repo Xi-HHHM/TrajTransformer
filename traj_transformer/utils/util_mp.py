@@ -12,8 +12,8 @@ from fancy_gym.black_box.factory.trajectory_generator_factory import get_traject
 
 class MP4Transformer:
     def __init__(self, device="cpu"):
-        self.duration = 5
-        self.dt = 0.1
+        self.duration = 3
+        self.dt = 0.01
         self.device = device
         self.n_basis = 8
 
